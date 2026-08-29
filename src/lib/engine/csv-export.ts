@@ -1,4 +1,5 @@
 import type { AnswerTableRow } from "@/lib/engine/answer-table";
+import { downloadTextFile } from "@/lib/engine/data-export";
 
 function escapeCsv(value: string): string {
   const safe = value.replace(/\r?\n/g, " ").trim();
@@ -42,11 +43,5 @@ export function combineCsvSections(...sections: string[]): string {
 }
 
 export function downloadCsvFile(filename: string, csv: string): void {
-  const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  anchor.click();
-  URL.revokeObjectURL(url);
+  downloadTextFile(filename, csv, "text/csv;charset=utf-8;", true);
 }

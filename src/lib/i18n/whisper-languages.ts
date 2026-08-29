@@ -4,7 +4,7 @@ export type WhisperLanguage = {
   nativeName: string;
   /** True when Whisper STT + live UI translation are available. */
   supported: boolean;
-  /** True for en / ta / hi with hand-written translation files. */
+  /** True for en with hand-written translation files. */
   hasStaticUi: boolean;
 };
 
@@ -113,7 +113,7 @@ const WHISPER_LANGUAGE_NAMES: Record<string, string> = {
   or: "Odia",
 };
 
-const STATIC_UI_CODES = new Set(["en", "ta", "hi"]);
+const STATIC_UI_CODES = new Set(["en"]);
 
 const NATIVE_NAME_OVERRIDES: Record<string, string> = {
   en: "English",

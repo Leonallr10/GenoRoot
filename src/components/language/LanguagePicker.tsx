@@ -127,34 +127,33 @@ export function LanguagePicker() {
   };
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full flex-1 flex-col px-5 py-10 safe-top safe-bottom">
-      <div className="mb-10 text-center">
-        <h1 className="text-4xl font-bold text-slate-900 sm:text-5xl">{t("en", "appTitle")}</h1>
-        <p className="mt-3 text-xl text-[#c96f35] sm:text-2xl">{t("en", "appSubtitle")}</p>
-      </div>
+    <div className="mx-auto flex min-h-dvh w-full flex-1 flex-col items-center justify-center px-5 py-10 safe-top safe-bottom">
+      <div className="flex w-full max-w-xl flex-col items-center text-center">
+        <div className="mb-10">
+          <h1 className="text-4xl font-bold text-slate-900 sm:text-5xl">{t("en", "appTitle")}</h1>
+          <p className="mt-3 text-xl text-[#c96f35] sm:text-2xl">{t("en", "appSubtitle")}</p>
+        </div>
 
-      <p className="mb-2 text-center text-lg font-semibold text-slate-700">
-        {t("en", "chooseLanguage")}
-      </p>
-      <p className="mb-4 text-center text-sm text-[#d4845c]">{t("en", "suggestedLanguages")}</p>
+        <p className="mb-2 text-lg font-semibold text-slate-700">{t("en", "chooseLanguage")}</p>
+        <p className="mb-4 text-sm text-[#d4845c]">{t("en", "suggestedLanguages")}</p>
 
-      <div ref={containerRef} className="relative mx-auto w-full max-w-xl">
-        <button
-          type="button"
-          aria-expanded={open}
-          aria-haspopup="listbox"
-          onClick={() => setOpen((prev) => !prev)}
-          className="genoroot-option text-left"
-        >
-          <span className={selectedLang ? "text-slate-900" : "text-slate-500"}>
-            {selectedLang
-              ? formatLanguageLabel(selectedLang)
-              : t("en", "selectLanguagePlaceholder")}
-          </span>
-          <ChevronDown
-            className={`h-6 w-6 shrink-0 text-[#c96f35] transition ${open ? "rotate-180" : ""}`}
-          />
-        </button>
+        <div ref={containerRef} className="relative w-full">
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-haspopup="listbox"
+            onClick={() => setOpen((prev) => !prev)}
+            className="genoroot-option relative justify-center text-center"
+          >
+            <span className={selectedLang ? "text-slate-900" : "text-slate-500"}>
+              {selectedLang
+                ? formatLanguageLabel(selectedLang)
+                : t("en", "selectLanguagePlaceholder")}
+            </span>
+            <ChevronDown
+              className={`absolute right-6 top-1/2 h-6 w-6 shrink-0 -translate-y-1/2 text-[#c96f35] transition ${open ? "rotate-180" : ""}`}
+            />
+          </button>
 
         {open ? (
           <div className="absolute left-0 right-0 z-30 mt-2 overflow-hidden rounded-2xl border border-white/70 bg-white/95 shadow-xl backdrop-blur-md">
@@ -232,18 +231,19 @@ export function LanguagePicker() {
         ) : null}
       </div>
 
-      {selectedCode && isIntakeLanguage(selectedCode) ? (
-        <div className="mx-auto mt-8 w-full max-w-xl">
-          <button
-            type="button"
-            className="genoroot-btn-continue inline-flex w-full items-center justify-center gap-2"
-            onClick={handleContinue}
-          >
-            {t("en", "continue")}
-            <ArrowRight className="h-5 w-5" />
-          </button>
-        </div>
-      ) : null}
+        {selectedCode && isIntakeLanguage(selectedCode) ? (
+          <div className="mt-8 w-full">
+            <button
+              type="button"
+              className="genoroot-btn-continue inline-flex w-full items-center justify-center gap-2"
+              onClick={handleContinue}
+            >
+              {t("en", "continue")}
+              <ArrowRight className="h-5 w-5" />
+            </button>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

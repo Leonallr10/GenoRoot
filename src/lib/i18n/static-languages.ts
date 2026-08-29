@@ -1,5 +1,5 @@
 /** Languages with hand-written translation files (no live API needed). */
-export const STATIC_TRANSLATION_CODES = ["en", "ta", "hi"] as const;
+export const STATIC_TRANSLATION_CODES = ["en"] as const;
 
 export type StaticTranslationCode = (typeof STATIC_TRANSLATION_CODES)[number];
 

@@ -51,6 +51,8 @@ export type TranslationDict = {
   recordedIn: string;
   viewInEnglish: string;
   viewOriginal: string;
+  downloadCsv: string;
+  downloadJson: string;
   viewStructuredData: string;
   comingSoon: string;
   comingSoonMessage: string;
@@ -99,7 +101,7 @@ export const en: TranslationDict = {
   language: "Language",
   listen: "Listen",
   questionHelper: "Choose the option that feels most comfortable for you.",
-  otherSpeak: "Other 🎤",
+  otherSpeak: "Other",
   tellUsInYourWords: "Tell us in your own words.",
   tapAndSpeak: "Tap and start speaking",
   useThis: "Use this",
@@ -126,6 +128,8 @@ export const en: TranslationDict = {
   recordedIn: "Your answers were recorded in {language}.",
   viewInEnglish: "View in English",
   viewOriginal: "View original answers",
+  downloadCsv: "Download CSV",
+  downloadJson: "Download JSON",
   viewStructuredData: "View structured data",
   comingSoon: "Coming soon",
   comingSoonMessage:

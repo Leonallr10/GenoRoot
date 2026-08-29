@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CheckCircle2, Download, FileText, Globe, Loader2 } from "lucide-react";
+import { CheckCircle2, Download, FileJson, FileText, Globe, Loader2 } from "lucide-react";
 import { AnswerTable, TranscriptTable } from "@/components/intake/AnswerTable";
 import { useIntakeStore } from "@/hooks/use-intake-store";
 import {
@@ -15,6 +15,11 @@ import {
   downloadCsvFile,
   transcriptRowsToCsv,
 } from "@/lib/engine/csv-export";
+import {
+  buildEnglishIntakeJson,
+  buildOriginalIntakeJson,
+  downloadJsonFile,
+} from "@/lib/engine/data-export";
 import { t } from "@/lib/i18n/translations";
 import { getLanguage } from "@/lib/i18n/languages";
 import { cn } from "@/lib/utils";
@@ -100,6 +105,25 @@ export default function CompletePage() {
     downloadCsvFile("genoroot-intake-english.csv", csv);
   };
 
+  const downloadOriginalJson = () => {
+    downloadJsonFile(
+      `genoroot-intake-original-${lang}.json`,
+      buildOriginalIntakeJson(lang, answers, transcripts)
+    );
+  };
+
+  const downloadEnglishJson = async () => {
+    const translated =
+      isEnglishSession || Object.keys(translations).length > 0
+        ? translations
+        : await ensureEnglishTranslations();
+
+    downloadJsonFile(
+      "genoroot-intake-english.json",
+      buildEnglishIntakeJson(lang, answers, transcripts, translated)
+    );
+  };
+
   const tabClass = (active: boolean) =>
     cn(
       "inline-flex flex-1 items-center justify-center gap-2 rounded-2xl px-4 py-3 text-base font-semibold transition sm:text-lg",
@@ -147,11 +171,20 @@ export default function CompletePage() {
               <button
                 type="button"
                 className={downloadBtnClass}
-                aria-label="Download English CSV"
-                title="Download CSV"
+                aria-label={t(lang, "downloadCsv")}
+                title={t(lang, "downloadCsv")}
                 onClick={() => void downloadEnglishCsv()}
               >
                 <Download className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                className={downloadBtnClass}
+                aria-label={t(lang, "downloadJson")}
+                title={t(lang, "downloadJson")}
+                onClick={() => void downloadEnglishJson()}
+              >
+                <FileJson className="h-5 w-5" />
               </button>
             </div>
 
@@ -168,11 +201,20 @@ export default function CompletePage() {
                 <button
                   type="button"
                   className={downloadBtnClass}
-                  aria-label="Download original CSV"
-                  title="Download CSV"
+                  aria-label={t(lang, "downloadCsv")}
+                  title={t(lang, "downloadCsv")}
                   onClick={downloadOriginalCsv}
                 >
                   <Download className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  className={downloadBtnClass}
+                  aria-label={t(lang, "downloadJson")}
+                  title={t(lang, "downloadJson")}
+                  onClick={downloadOriginalJson}
+                >
+                  <FileJson className="h-5 w-5" />
                 </button>
               </div>
             )}

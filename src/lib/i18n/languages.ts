@@ -16,8 +16,8 @@ export type Language = {
 
 export const LANGUAGES: Language[] = [
   { code: "en", name: "English", nativeName: "English", speechLocale: "en-IN", supported: true, hasStaticUi: true },
-  { code: "ta", name: "Tamil", nativeName: "தமிழ்", speechLocale: "ta-IN", supported: true, hasStaticUi: true },
-  { code: "hi", name: "Hindi", nativeName: "हिन्दी", speechLocale: "hi-IN", supported: true, hasStaticUi: true },
+  { code: "ta", name: "Tamil", nativeName: "தமிழ்", speechLocale: "ta-IN", supported: true, hasStaticUi: false },
+  { code: "hi", name: "Hindi", nativeName: "हिन्दी", speechLocale: "hi-IN", supported: true, hasStaticUi: false },
   { code: "te", name: "Telugu", nativeName: "తెలుగు", speechLocale: "te-IN", supported: true, hasStaticUi: false },
   { code: "bn", name: "Bengali", nativeName: "বাংলা", speechLocale: "bn-IN", supported: true, hasStaticUi: false },
   { code: "gu", name: "Gujarati", nativeName: "ગુજરાતી", speechLocale: "gu-IN", supported: true, hasStaticUi: false },

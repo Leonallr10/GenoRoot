@@ -1,11 +1,9 @@
 import type { TranslationDict } from "./en";
 import { en } from "./en";
-import { hi } from "./hi";
-import { ta } from "./ta";
 import { hasStaticTranslations } from "../static-languages";
 import { getCachedTranslation } from "../translation-cache";
 
-const staticTranslations: Record<string, TranslationDict> = { en, ta, hi };
+const staticTranslations: Record<string, TranslationDict> = { en };
 
 const liveTranslations: Record<string, TranslationDict> = {};
 
@@ -153,4 +151,4 @@ export function needsLiveTranslation(lang: string): boolean {
   return !hasStaticTranslations(lang);
 }
 
-export { en, ta, hi };
+export { en };
