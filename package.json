@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:translate": "node test.js",
+    "test:translate:local": "node test.js --local"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

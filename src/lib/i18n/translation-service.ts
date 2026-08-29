@@ -117,14 +117,22 @@ export async function translateText(
 
   let translated: string | null = null;
 
-  if (sourceLang === "en" && OPUS_FROM_ENGLISH[targetLang]) {
-    translated = await callHfModel(token, OPUS_FROM_ENGLISH[targetLang], protectedText);
-  } else if (targetLang === "en" && OPUS_TO_ENGLISH[sourceLang]) {
-    translated = await callHfModel(token, OPUS_TO_ENGLISH[sourceLang], protectedText);
+  try {
+    if (sourceLang === "en" && OPUS_FROM_ENGLISH[targetLang]) {
+      translated = await callHfModel(token, OPUS_FROM_ENGLISH[targetLang], protectedText);
+    } else if (targetLang === "en" && OPUS_TO_ENGLISH[sourceLang]) {
+      translated = await callHfModel(token, OPUS_TO_ENGLISH[sourceLang], protectedText);
+    }
+  } catch {
+    translated = null;
   }
 
   if (!translated) {
-    translated = await translateWithMbart(token, protectedText, sourceLang, targetLang);
+    try {
+      translated = await translateWithMbart(token, protectedText, sourceLang, targetLang);
+    } catch {
+      translated = null;
+    }
   }
 
   if (!translated) return text;
