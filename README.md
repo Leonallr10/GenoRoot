@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GenoRoot — Multilingual Smart Hair & Scalp Intake
+
+A mobile-first, voice-enabled patient intake application built with Next.js. Patients can read, listen, tap, speak, review, and submit in English, Tamil, or Hindi — while underlying medical data stays clean, structured, and deterministic.
+
+## Features
+
+- **Multilingual UI** (English, Tamil, Hindi) with browser-locale suggestions
+- **Voice input** via Whisper large-v3 (Hugging Face) with Web Speech API fallback
+- **Text-to-speech** for question prompts and review
+- **Smart branching** for habits, products, procedures, and follow-ups
+- **Local persistence** — resume intake after refresh
+- **Structured JSON output** with optional English view for free-form transcripts
+
+## Tech Stack
+
+- Next.js 16 (App Router) + TypeScript
+- Tailwind CSS + shadcn-style components
+- Zod validation
+- Zustand + localStorage persistence
+- Hugging Face Inference API (Whisper + translation)
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
+cp .env.example .env.local
+# Add your HF_TOKEN to .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Description |
+|----------|-------------|
+| `HF_TOKEN` | Hugging Face API token for Whisper/transcription |
+| `WHISPER_MODEL` | Default: `openai/whisper-large-v3` |
+| `WHISPER_ENDPOINT` | Optional dedicated inference endpoint URL |
 
-## Learn More
+## Deploy (Vercel)
 
-To learn more about Next.js, take a look at the following resources:
+1. Push to GitHub
+2. Import project in Vercel
+3. Add `HF_TOKEN` environment variable
+4. Deploy
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Architecture
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+Language selection → Question engine → Tap or Voice → Canonical JSON
+                              ↓
+                    Whisper STT (with Web Speech fallback)
+                              ↓
+                    localStorage auto-save → Review → Submit
+```
 
-## Deploy on Vercel
+Voice is an **interaction layer**, not the source of truth. All predefined answers map to canonical English values regardless of UI language.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Question Schema
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The intake form is driven by [`src/data/questions.json`](src/data/questions.json) — 16 questions across 5 sections (A–E).
+
+## License
+
+Take-home project for Haiku Studio / GenoRoot.
