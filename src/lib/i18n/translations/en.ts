@@ -19,8 +19,11 @@ export type TranslationDict = {
   back: string;
   continue: string;
   startOver: string;
+  startFromBeginning: string;
   welcomeBack: string;
   savedProgress: string;
+  completedIntakeHint: string;
+  continueToReport: string;
   language: string;
   listen: string;
   questionHelper: string;
@@ -109,8 +112,11 @@ export const en: TranslationDict = {
   back: "Back",
   continue: "Continue",
   startOver: "Start over",
+  startFromBeginning: "Start from beginning",
   welcomeBack: "Welcome back",
   savedProgress: "We saved your progress. You were on question {current} of {total}.",
+  completedIntakeHint: "You finished the intake in {language}. Continue to your report or start again.",
+  continueToReport: "Continue to report",
   language: "Language",
   listen: "Listen",
   questionHelper: "Choose the option that feels most comfortable for you.",

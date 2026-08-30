@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, ChevronDown, Search } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, Loader2, RotateCcw, Search } from "lucide-react";
 import {
   detectLocaleHints,
   getLanguage,
@@ -16,10 +16,17 @@ import { getWhisperLanguage } from "@/lib/i18n/whisper-languages";
 import type { WhisperLanguage } from "@/lib/i18n/whisper-languages";
 import { t } from "@/lib/i18n/translations";
 import { useIntakeStore } from "@/hooks/use-intake-store";
-import { getIntakeContinuePath, getIntakeContinueStepIndex } from "@/lib/engine/intake-navigation";
+import {
+  getIntakeContinuePath,
+  getIntakeContinueStepIndex,
+  hasIntakeProgress,
+} from "@/lib/engine/intake-navigation";
+import { getResumeStepIndex, getVisibleSteps } from "@/lib/engine/question-flow";
 import { prefetchIntakeTranslations } from "@/lib/i18n/prefetch-intake-translations";
 
 type LanguageOption = Language | WhisperLanguage;
+
+type PrefetchStatus = "idle" | "loading" | "ready" | "failed";
 
 function formatLanguageLabel(lang: LanguageOption): string {
   if (lang.nativeName !== lang.name) {
@@ -32,8 +39,11 @@ export function LanguagePicker() {
   const router = useRouter();
   const setLanguage = useIntakeStore((s) => s.setLanguage);
   const setCurrentStep = useIntakeStore((s) => s.setCurrentStep);
+  const resetIntake = useIntakeStore((s) => s.resetIntake);
   const answers = useIntakeStore((s) => s.answers);
+  const submitted = useIntakeStore((s) => s.submitted);
   const storedLang = useIntakeStore((s) => s.preferredLanguage);
+  const sessionLang = useIntakeStore((s) => s.intakeLanguage) ?? storedLang;
 
   const [localeHints, setLocaleHints] = useState(() => detectLocaleHints());
   const [open, setOpen] = useState(false);
@@ -41,6 +51,7 @@ export function LanguagePicker() {
   const [selectedCode, setSelectedCode] = useState<string | null>(storedLang || null);
   const [searchResults, setSearchResults] = useState<WhisperLanguage[]>([]);
   const [searching, setSearching] = useState(false);
+  const [prefetchStatus, setPrefetchStatus] = useState<PrefetchStatus>("idle");
   const containerRef = useRef<HTMLDivElement>(null);
   const searchAbortRef = useRef<AbortController | null>(null);
 
@@ -57,6 +68,12 @@ export function LanguagePicker() {
     if (!selectedCode) return null;
     return getLanguage(selectedCode) ?? getWhisperLanguage(selectedCode) ?? null;
   }, [selectedCode]);
+
+  const savedProgress = hasIntakeProgress(answers, Boolean(submitted));
+  const visibleStepCount = useMemo(() => getVisibleSteps(answers).length, [answers]);
+  const resumeStep = useMemo(() => getResumeStepIndex(answers), [answers]);
+  const sessionLanguageName =
+    getLanguage(sessionLang)?.nativeName ?? sessionLang;
 
   const isSearching = query.trim().length > 0;
   const listItems: LanguageOption[] = isSearching ? searchResults : suggestions;
@@ -108,6 +125,35 @@ export function LanguagePicker() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const startPrefetch = useCallback(async (code: string, cancelled?: () => boolean) => {
+    if (!isIntakeLanguage(code)) {
+      if (!cancelled?.()) setPrefetchStatus("idle");
+      return;
+    }
+
+    if (hasStaticTranslations(code)) {
+      if (!cancelled?.()) setPrefetchStatus("ready");
+      return;
+    }
+
+    if (!cancelled?.()) setPrefetchStatus("loading");
+    const ready = await prefetchIntakeTranslations(code);
+    if (!cancelled?.()) setPrefetchStatus(ready ? "ready" : "failed");
+  }, []);
+
+  useEffect(() => {
+    if (!selectedCode) {
+      setPrefetchStatus("idle");
+      return;
+    }
+
+    let cancelled = false;
+    void startPrefetch(selectedCode, () => cancelled);
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCode, startPrefetch]);
+
   const handleSelect = (code: string) => {
     if (!isIntakeLanguage(code)) return;
     setSelectedCode(code);
@@ -116,14 +162,36 @@ export function LanguagePicker() {
     setSearchResults([]);
   };
 
-  const handleContinue = () => {
+  const navigateAfterLanguage = (mode: "continue" | "restart") => {
     if (!selectedCode || !isIntakeLanguage(selectedCode)) return;
-    setLanguage(selectedCode);
-    void prefetchIntakeTranslations(selectedCode);
-    const stepIndex = getIntakeContinueStepIndex(answers);
+    if (prefetchStatus !== "ready") return;
+
+    if (mode === "restart") {
+      resetIntake(selectedCode);
+      setCurrentStep(0);
+      router.push("/intake/0");
+      return;
+    }
+
+    if (mode === "continue") {
+      if (submitted) {
+        setLanguage(selectedCode);
+      } else {
+        useIntakeStore.setState({
+          preferredLanguage: selectedCode,
+          intakeLanguage: selectedCode,
+        });
+      }
+    }
+
+    const stepIndex = getIntakeContinueStepIndex(answers, Boolean(submitted));
     setCurrentStep(stepIndex);
-    router.push(getIntakeContinuePath(answers));
+    router.push(getIntakeContinuePath(answers, Boolean(submitted)));
   };
+
+  const continueDisabled =
+    prefetchStatus === "loading" ||
+    (prefetchStatus === "idle" && !hasStaticTranslations(selectedCode ?? "en"));
 
   return (
     <div className="mx-auto flex min-h-dvh w-full flex-1 flex-col items-center justify-center px-5 py-10 safe-top safe-bottom">
@@ -231,15 +299,73 @@ export function LanguagePicker() {
       </div>
 
         {selectedCode && isIntakeLanguage(selectedCode) ? (
-          <div className="mt-8 w-full">
+          <div className="mt-8 w-full space-y-3">
+            {savedProgress ? (
+              <div className="rounded-2xl border border-[#f5dcc8] bg-white/70 px-4 py-4 text-left">
+                <p className="text-lg font-semibold text-slate-900">
+                  {t("en", "welcomeBack")}
+                </p>
+                <p className="mt-2 text-base text-slate-600">
+                  {submitted
+                    ? t("en", "completedIntakeHint", {
+                        language: sessionLanguageName,
+                      })
+                    : t("en", "savedProgress", {
+                        current: Math.min(resumeStep + 1, visibleStepCount),
+                        total: visibleStepCount,
+                      })}
+                </p>
+              </div>
+            ) : null}
+
             <button
               type="button"
-              className="genoroot-btn-continue inline-flex w-full items-center justify-center gap-2"
-              onClick={handleContinue}
+              className="genoroot-btn-continue inline-flex w-full items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-70"
+              disabled={continueDisabled}
+              onClick={() => {
+                if (prefetchStatus === "failed") {
+                  void startPrefetch(selectedCode);
+                  return;
+                }
+                navigateAfterLanguage("continue");
+              }}
             >
-              {t("en", "continue")}
-              <ArrowRight className="h-5 w-5" />
+              {prefetchStatus === "loading" ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  {t("en", "translatingContent")}
+                </>
+              ) : prefetchStatus === "failed" ? (
+                t("en", "translationLoadFailed")
+              ) : (
+                <>
+                  {submitted ? t("en", "continueToReport") : t("en", "continue")}
+                  <ArrowRight className="h-5 w-5" />
+                </>
+              )}
             </button>
+
+            {savedProgress ? (
+              <button
+                type="button"
+                className="genoroot-btn-back inline-flex w-full items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-70"
+                disabled={continueDisabled}
+                onClick={() => {
+                  if (prefetchStatus === "failed") {
+                    void startPrefetch(selectedCode);
+                    return;
+                  }
+                  navigateAfterLanguage("restart");
+                }}
+              >
+                <RotateCcw className="h-5 w-5" />
+                {t("en", "startFromBeginning")}
+              </button>
+            ) : null}
+
+            {prefetchStatus === "loading" ? (
+              <p className="text-sm text-[#c96f35]">{t("en", "translatingContentHint")}</p>
+            ) : null}
           </div>
         ) : null}
       </div>

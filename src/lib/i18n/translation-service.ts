@@ -1,10 +1,12 @@
 import { toMbartCode } from "./mbart-codes";
+import { toNllbCode } from "./nllb-codes";
 
 /** Current Hugging Face serverless inference base (legacy api-inference.huggingface.co is deprecated). */
 export const HF_INFERENCE_BASE =
   process.env.HF_INFERENCE_BASE ?? "https://router.huggingface.co/hf-inference/models";
 
 const MBART_MODEL = "facebook/mbart-large-50-many-to-many-mmt";
+const NLLB_MODEL = "facebook/nllb-200-distilled-600M";
 
 const OPUS_TO_ENGLISH: Record<string, string> = {
   ta: "Helsinki-NLP/opus-mt-ta-en",
@@ -104,6 +106,22 @@ async function translateWithMbart(
   });
 }
 
+async function translateWithNllb(
+  token: string,
+  text: string,
+  sourceLang: string,
+  targetLang: string
+): Promise<string | null> {
+  const src = toNllbCode(sourceLang);
+  const tgt = toNllbCode(targetLang);
+  if (!src || !tgt || src === tgt) return text;
+
+  return callHfModel(token, NLLB_MODEL, text, {
+    src_lang: src,
+    tgt_lang: tgt,
+  });
+}
+
 export async function translateText(
   text: string,
   sourceLang: string,
@@ -130,6 +148,14 @@ export async function translateText(
   if (!translated) {
     try {
       translated = await translateWithMbart(token, protectedText, sourceLang, targetLang);
+    } catch {
+      translated = null;
+    }
+  }
+
+  if (!translated) {
+    try {
+      translated = await translateWithNllb(token, protectedText, sourceLang, targetLang);
     } catch {
       translated = null;
     }

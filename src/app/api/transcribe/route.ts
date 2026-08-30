@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { HF_INFERENCE_BASE } from "@/lib/i18n/translation-service";
 import {
   normalizeTranscriptionLanguage,
   transcribeWithGroqWhisper,
@@ -20,48 +19,70 @@ export async function POST(req: NextRequest) {
 
     const audioBuffer = await audio.arrayBuffer();
     const contentType = audio.type || "audio/webm";
+    const preferHf = process.env.WHISPER_PROVIDER?.toLowerCase() === "huggingface";
+    const hfToken = process.env.HF_TOKEN;
 
     let transcript = "";
-    let provider: "groq" | "huggingface" = "groq";
+    let provider: "groq" | "huggingface" = preferHf ? "huggingface" : "groq";
+    const errors: string[] = [];
 
-    try {
+    const tryGroq = async () => {
       transcript = await transcribeWithGroqWhisper(
         audioBuffer,
         contentType,
         language
       );
-    } catch (groqError) {
-      const token = process.env.HF_TOKEN;
-      const model = process.env.WHISPER_MODEL || "openai/whisper-large-v3";
-      const endpoint =
-        process.env.WHISPER_ENDPOINT ||
-        `${HF_INFERENCE_BASE}/${model}`;
+      provider = "groq";
+    };
 
-      if (!token) {
-        const message =
-          groqError instanceof Error ? groqError.message : String(groqError);
-        return NextResponse.json(
-          {
-            error: "Transcription unavailable",
-            details: `${message}. HF_TOKEN is also not configured for fallback.`,
-          },
-          { status: 503 }
-        );
+    const tryHf = async () => {
+      if (!hfToken) {
+        throw new Error("HF_TOKEN is not configured.");
       }
-
-      provider = "huggingface";
       transcript = await transcribeWithHfWhisper(
         audioBuffer,
         contentType,
-        endpoint,
-        token
+        language,
+        hfToken
       );
+      provider = "huggingface";
+    };
+
+    if (preferHf) {
+      try {
+        await tryHf();
+      } catch (error) {
+        errors.push(error instanceof Error ? error.message : String(error));
+        try {
+          await tryGroq();
+        } catch (groqError) {
+          errors.push(
+            groqError instanceof Error ? groqError.message : String(groqError)
+          );
+        }
+      }
+    } else {
+      try {
+        await tryGroq();
+      } catch (error) {
+        errors.push(error instanceof Error ? error.message : String(error));
+        try {
+          await tryHf();
+        } catch (hfError) {
+          errors.push(
+            hfError instanceof Error ? hfError.message : String(hfError)
+          );
+        }
+      }
     }
 
     if (!transcript) {
       return NextResponse.json(
-        { error: "No speech detected in recording" },
-        { status: 422 }
+        {
+          error: "Transcription unavailable",
+          details: errors.join(" | "),
+        },
+        { status: 503 }
       );
     }
 

@@ -23,13 +23,13 @@ export default function ReviewPage() {
   const lang = useIntakeStore((s) => s.preferredLanguage);
   const answers = useIntakeStore((s) => s.answers);
   const markSubmitted = useIntakeStore((s) => s.markSubmitted);
-  const resetIntake = useIntakeStore((s) => s.reset);
+  const resetIntake = useIntakeStore((s) => s.resetIntake);
   const setCurrentStep = useIntakeStore((s) => s.setCurrentStep);
 
   const visibleSteps = useMemo(() => getVisibleSteps(answers), [answers]);
 
   const handleReintake = () => {
-    resetIntake();
+    resetIntake(lang);
     setCurrentStep(0);
     router.push("/intake/0");
   };

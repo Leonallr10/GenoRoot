@@ -43,10 +43,20 @@ export const intakeAnswersSchema = z.object({
 
 export const intakeStateSchema = z.object({
   preferredLanguage: z.string(),
+  /** Language the intake answers and report were captured in (preserved after submit). */
+  intakeLanguage: z.string().optional(),
   answers: intakeAnswersSchema,
   transcripts: z.record(z.string(), z.string()).optional(),
   currentStep: z.number(),
   submitted: z.boolean().optional(),
+  clinicalReport: z
+    .object({
+      report: z.record(z.string(), z.unknown()),
+      model: z.string(),
+      generatedAt: z.string(),
+    })
+    .optional()
+    .nullable(),
 });
 
 export type IntakeAnswers = z.infer<typeof intakeAnswersSchema>;
@@ -57,9 +67,11 @@ export const STORAGE_KEY = "genoroot-intake-v1";
 export function createInitialState(language = "en"): IntakeState {
   return {
     preferredLanguage: language,
+    intakeLanguage: language,
     answers: {},
     transcripts: {},
     currentStep: 0,
     submitted: false,
+    clinicalReport: null,
   };
 }

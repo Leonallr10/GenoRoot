@@ -10,8 +10,8 @@ export type ReportMeta = {
   generatedAt: string;
 };
 
-export function useClinicalReport() {
-  const [report, setReport] = useState<ReportMeta | null>(null);
+export function useClinicalReport(initialReport: ReportMeta | null = null) {
+  const [report, setReport] = useState<ReportMeta | null>(initialReport);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,5 +52,5 @@ export function useClinicalReport() {
     []
   );
 
-  return { report, loading, error, generate };
+  return { report, setReport, loading, error, generate };
 }

@@ -125,21 +125,33 @@ async function localizeReport(
 }
 
 export default function CompletePage() {
-  const lang = useIntakeStore((s) => s.preferredLanguage);
+  const uiLang = useIntakeStore((s) => s.preferredLanguage);
+  const contentLang = useIntakeStore((s) => s.intakeLanguage) ?? uiLang;
   const answers = useIntakeStore((s) => s.answers);
   const transcripts = useIntakeStore((s) => s.transcripts);
-  const isEnglishSession = lang === "en";
+  const storedReport = useIntakeStore((s) => s.clinicalReport);
+  const setStoredReport = useIntakeStore((s) => s.setClinicalReport);
+
+  const initialReport = storedReport
+    ? {
+        report: storedReport.report as ClinicalReport,
+        model: storedReport.model,
+        generatedAt: storedReport.generatedAt,
+      }
+    : null;
+
+  const isEnglishSession = contentLang === "en";
   const [view, setView] = useState<ViewMode>(isEnglishSession ? "english" : "original");
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [loadingEnglish, setLoadingEnglish] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [downloadingReportPdf, setDownloadingReportPdf] = useState(false);
   const { report, loading: generating, error: reportError, generate } =
-    useClinicalReport();
+    useClinicalReport(initialReport);
 
   const originalRows = useMemo(
-    () => buildAnswerTableRows(answers, lang),
-    [answers, lang]
+    () => buildAnswerTableRows(answers, contentLang),
+    [answers, contentLang]
   );
 
   const englishRows = useMemo(() => buildEnglishAnswerTableRows(answers), [answers]);
@@ -149,13 +161,13 @@ export default function CompletePage() {
     [transcripts, translations]
   );
 
-  const languageName = getLanguage(lang)?.nativeName ?? lang;
+  const languageName = getLanguage(contentLang)?.nativeName ?? contentLang;
   const hasAnswers = Object.keys(answers).length > 0;
 
   const ensureEnglishTranslations = async (): Promise<Record<string, string>> => {
     if (Object.keys(translations).length > 0) return translations;
     if (!transcripts || Object.keys(transcripts).length === 0) return {};
-    const next = await fetchTranslations(lang, transcripts);
+    const next = await fetchTranslations(contentLang, transcripts);
     setTranslations(next);
     return next;
   };
@@ -164,12 +176,15 @@ export default function CompletePage() {
     const englishTranscripts = isEnglishSession
       ? transcripts
       : await ensureEnglishTranslations();
-    await generate({
-      language: lang,
+    const next = await generate({
+      language: contentLang,
       answers,
       transcripts,
       englishTranscripts,
     });
+    if (next) {
+      setStoredReport(next);
+    }
   };
 
   const loadEnglishView = async () => {
@@ -189,7 +204,7 @@ export default function CompletePage() {
   const downloadClinicalReportPdf = async (locale: ExportLocale) => {
     if (!report) return;
 
-    const targetLang = locale === "en" ? "en" : lang;
+    const targetLang = locale === "en" ? "en" : contentLang;
     const suffix = targetLang === "en" ? "english" : targetLang;
     setDownloadingReportPdf(true);
 
@@ -240,7 +255,7 @@ export default function CompletePage() {
   };
 
   const handleExport = async (format: ExportFormat, locale: ExportLocale) => {
-    const targetLang = locale === "en" ? "en" : lang;
+    const targetLang = locale === "en" ? "en" : contentLang;
     const languageLabel =
       targetLang === "en" ? "English" : languageName;
     const rows: AnswerTableRow[] =
@@ -331,10 +346,10 @@ export default function CompletePage() {
             <CheckCircle2 className="mt-1 h-9 w-9 shrink-0 text-[#e8894a]" />
             <div>
               <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">
-                {t(lang, "intakeComplete")}
+                {t(uiLang, "intakeComplete")}
               </h1>
               <p className="mt-2 text-lg text-slate-600 sm:text-xl">
-                {t(lang, "recordedIn", { language: languageName })}
+                {t(uiLang, "recordedIn", { language: languageName })}
               </p>
             </div>
           </div>
@@ -354,7 +369,7 @@ export default function CompletePage() {
                 ) : (
                   <Globe className="h-5 w-5" />
                 )}
-                {t(lang, "viewInEnglish")}
+                {t(uiLang, "viewInEnglish")}
               </button>
             </div>
 
@@ -365,12 +380,12 @@ export default function CompletePage() {
                 onClick={() => setView("original")}
               >
                 <FileText className="h-5 w-5" />
-                {t(lang, "viewOriginal")}
+                {t(uiLang, "viewOriginal")}
               </button>
             )}
 
             <DownloadMenu
-              lang={lang}
+              lang={uiLang}
               languageName={languageName}
               isEnglishSession={isEnglishSession}
               busy={exporting}
@@ -395,7 +410,7 @@ export default function CompletePage() {
               <div className="flex items-center gap-3">
                 <ClipboardList className="h-6 w-6 shrink-0 text-[#c96f35]" />
                 <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">
-                  {t(lang, "clinicalReport")}
+                  {t(uiLang, "clinicalReport")}
                 </h2>
               </div>
 
@@ -414,14 +429,14 @@ export default function CompletePage() {
                     <ClipboardList className="h-5 w-5" />
                   )}
                   {generating
-                    ? t(lang, "generatingReport")
+                    ? t(uiLang, "generatingReport")
                     : report
-                      ? t(lang, "regenerateReport")
-                      : t(lang, "generateReport")}
+                      ? t(uiLang, "regenerateReport")
+                      : t(uiLang, "generateReport")}
                 </button>
 
                 <ReportPdfMenu
-                  lang={lang}
+                  lang={uiLang}
                   languageName={languageName}
                   isEnglishSession={isEnglishSession}
                   busy={downloadingReportPdf}
@@ -433,13 +448,13 @@ export default function CompletePage() {
               {generating && !report && (
                 <p className="inline-flex items-center gap-2 text-base text-[#c96f35]">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  {t(lang, "generatingReport")}
+                  {t(uiLang, "generatingReport")}
                 </p>
               )}
 
               {reportError && (
                 <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-base text-red-700">
-                  {t(lang, "reportFailed")} {reportError}
+                  {t(uiLang, "reportFailed")} {reportError}
                 </p>
               )}
 
