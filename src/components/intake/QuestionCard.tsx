@@ -98,7 +98,7 @@ export function QuestionCard({
   useEffect(() => {
     setOtherInput(readOtherInputValue(currentValue, step.options));
     setShowVoice(false);
-  }, [step.id, currentValue, step.options]);
+  }, [step.id, step.options]);
 
   const applyOtherAnswer = (trimmed: string, saveTranscript = false) => {
     if (trimmed && saveTranscript) onTranscript?.(trimmed);
@@ -152,9 +152,36 @@ export function QuestionCard({
     onAnswer(trimmed || OTHER_ANSWER);
   };
 
+  const commitOtherText = (value: string) => {
+    const trimmed = value.trim();
+
+    if (step.type === "single") {
+      onAnswer(trimmed || OTHER_ANSWER);
+      return;
+    }
+
+    if (step.type === "multi") {
+      onAnswer(trimmed ? [trimmed] : [OTHER_ANSWER]);
+      return;
+    }
+
+    if (step.type === "text") {
+      onAnswer(value);
+      return;
+    }
+
+    applyOtherAnswer(trimmed);
+  };
+
   const handleOtherInputChange = (value: string) => {
     setOtherInput(value);
-    applyOtherAnswer(value.trim());
+    commitOtherText(value);
+  };
+
+  const selectPresetOption = (canonical: string) => {
+    setOtherInput("");
+    setShowVoice(false);
+    onAnswer(canonical);
   };
 
   const handleVoiceConfirm = (transcript: string) => {
@@ -207,8 +234,10 @@ export function QuestionCard({
             <AnswerOption
               key={canonical}
               label={label}
-              selected={currentValue === canonical}
-              onClick={() => onAnswer(canonical)}
+              selected={!translating && currentValue === canonical}
+              loading={translating}
+              disabled={translating}
+              onClick={() => selectPresetOption(canonical)}
             />
           ))}
         </div>
@@ -225,8 +254,13 @@ export function QuestionCard({
               <AnswerOption
                 key={canonical}
                 label={label}
-                selected={isSelected}
+                selected={!translating && isSelected}
+                loading={translating}
+                disabled={translating}
                 onClick={() => {
+                  if (translating) return;
+                  setOtherInput("");
+                  setShowVoice(false);
                   const next = isSelected
                     ? selected.filter((s) => s !== canonical)
                     : [...selected, canonical];
@@ -285,20 +319,26 @@ export function QuestionCard({
             <div
               className={cn(
                 "genoroot-option mt-4 gap-3 px-4 py-3",
-                otherSelected && "genoroot-option-selected"
+                otherSelected && !translating && "genoroot-option-selected",
+                translating && "pointer-events-none opacity-80"
               )}
             >
               <input
                 type="text"
                 value={otherInput}
-                placeholder={otherSpeak}
+                placeholder={translating ? translatingContent : otherSpeak}
+                disabled={translating}
                 onChange={(e) => handleOtherInputChange(e.target.value)}
                 onFocus={() => {
-                  if (!otherSelected) applyOtherAnswer("");
+                  if (translating) return;
+                  if (!otherSelected) {
+                    setOtherInput("");
+                    onAnswer(OTHER_ANSWER);
+                  }
                 }}
                 className={cn(
                   "min-w-0 flex-1 bg-transparent text-xl font-semibold outline-none placeholder:font-semibold",
-                  otherSelected
+                  otherSelected && !translating
                     ? "text-white placeholder:text-white/70"
                     : "text-slate-900 placeholder:text-slate-500"
                 )}
@@ -306,15 +346,20 @@ export function QuestionCard({
               <button
                 type="button"
                 aria-label={otherSpeak}
+                disabled={translating}
                 onClick={() => setShowVoice(true)}
                 className={cn(
                   "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 transition",
-                  otherSelected
+                  otherSelected && !translating
                     ? "border-white/70 bg-white/15 text-white hover:bg-white/25"
                     : "border-[#e8894a]/35 bg-white/50 text-[#c96f35] hover:bg-white/80"
                 )}
               >
-                <Mic className="h-6 w-6" />
+                {translating ? (
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                ) : (
+                  <Mic className="h-6 w-6" />
+                )}
               </button>
             </div>
 
@@ -337,11 +382,20 @@ export function QuestionCard({
         <button
           type="button"
           className="genoroot-btn-continue inline-flex items-center justify-center gap-2"
-          disabled={!canContinue}
+          disabled={!canContinue || translating}
           onClick={onContinue}
         >
-          {continueLabel}
-          <ArrowRight className="h-5 w-5" />
+          {translating ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" />
+              {translatingContent}
+            </>
+          ) : (
+            <>
+              {continueLabel}
+              <ArrowRight className="h-5 w-5" />
+            </>
+          )}
         </button>
       </div>
     </div>
