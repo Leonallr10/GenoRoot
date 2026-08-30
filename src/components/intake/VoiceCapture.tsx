@@ -11,7 +11,7 @@ interface VoiceCaptureProps {
   onCancel: () => void;
 }
 
-type RecordState = "idle" | "recording" | "paused" | "processing";
+type RecordState = "idle" | "recording" | "paused" | "processing" | "review";
 
 async function transcribeWithWhisper(
   blob: Blob,
@@ -90,23 +90,25 @@ export function VoiceCapture({ language, onConfirm, onCancel }: VoiceCaptureProp
     };
   }, []);
 
+  const enterReview = (text = "") => {
+    setTranscript(text);
+    setRecordState("review");
+    cleanupStream();
+  };
+
   const transcribeBlob = async (blob: Blob) => {
     setRecordState("processing");
     try {
       const text = await transcribeWithWhisper(blob, language);
-      setTranscript(text);
-      setRecordState("idle");
+      enterReview(text);
     } catch {
       try {
         const text = await transcribeWithWebSpeech(language);
-        setTranscript(text);
-        setRecordState("idle");
+        enterReview(text);
       } catch {
-        setError("Could not transcribe. Please try again or type your answer.");
-        setRecordState("idle");
+        setError("Could not transcribe. You can type your answer below.");
+        enterReview("");
       }
-    } finally {
-      cleanupStream();
     }
   };
 
@@ -126,8 +128,7 @@ export function VoiceCapture({ language, onConfirm, onCancel }: VoiceCaptureProp
       recorder.onstop = async () => {
         clearTimer();
         if (chunksRef.current.length === 0) {
-          setRecordState("idle");
-          cleanupStream();
+          enterReview("");
           return;
         }
         const blob = new Blob(chunksRef.current, { type: "audio/webm" });
@@ -140,8 +141,8 @@ export function VoiceCapture({ language, onConfirm, onCancel }: VoiceCaptureProp
       setSeconds(0);
       startTimer();
     } catch {
-      setError("Microphone access denied.");
-      setRecordState("idle");
+      setError("Microphone access denied. You can type your answer below.");
+      enterReview("");
     }
   };
 
@@ -194,69 +195,80 @@ export function VoiceCapture({ language, onConfirm, onCancel }: VoiceCaptureProp
           {t(language, "tellUsInYourWords")}
         </p>
 
-        <div className="flex flex-col items-center gap-4">
-          {recordState === "idle" && !transcript && (
-            <button
-              type="button"
-              aria-label="Start recording"
-              onClick={startRecording}
-              className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[#e8894a] to-[#d96938] text-white shadow-lg"
-            >
-              <Mic className="h-10 w-10" />
-            </button>
-          )}
-
-          {(recordState === "recording" || recordState === "paused") && (
-            <div className="flex items-center gap-4">
-              {recordState === "recording" ? (
-                <button
-                  type="button"
-                  aria-label={t(language, "pauseRecording")}
-                  onClick={pauseRecording}
-                  className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-[#e8894a]/40 bg-white/70 text-[#c96f35] shadow-md"
-                >
-                  <Pause className="h-7 w-7" />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  aria-label={t(language, "resumeRecording")}
-                  onClick={resumeRecording}
-                  className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#e8894a] to-[#d96938] text-white shadow-md"
-                >
-                  <Play className="h-7 w-7" />
-                </button>
-              )}
+        {recordState !== "review" && (
+          <div className="flex flex-col items-center gap-4">
+            {recordState === "idle" && (
               <button
                 type="button"
-                aria-label={t(language, "stopRecording")}
-                onClick={stopRecording}
-                className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500 text-white shadow-md"
+                aria-label="Start recording"
+                onClick={startRecording}
+                className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[#e8894a] to-[#d96938] text-white shadow-lg"
               >
-                <Square className="h-6 w-6 fill-current" />
+                <Mic className="h-10 w-10" />
               </button>
-            </div>
-          )}
+            )}
 
-          {recordState === "processing" && (
-            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white/60">
-              <Loader2 className="h-10 w-10 animate-spin text-[#c96f35]" />
-            </div>
-          )}
+            {(recordState === "recording" || recordState === "paused") && (
+              <div className="flex items-center gap-4">
+                {recordState === "recording" ? (
+                  <button
+                    type="button"
+                    aria-label={t(language, "pauseRecording")}
+                    onClick={pauseRecording}
+                    className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-[#e8894a]/40 bg-white/70 text-[#c96f35] shadow-md"
+                  >
+                    <Pause className="h-7 w-7" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    aria-label={t(language, "resumeRecording")}
+                    onClick={resumeRecording}
+                    className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#e8894a] to-[#d96938] text-white shadow-md"
+                  >
+                    <Play className="h-7 w-7" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  aria-label={t(language, "stopRecording")}
+                  onClick={stopRecording}
+                  className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500 text-white shadow-md"
+                >
+                  <Square className="h-6 w-6 fill-current" />
+                </button>
+              </div>
+            )}
 
-          <p className="text-lg font-medium text-[#c96f35]">
-            {recordState === "processing"
-              ? t(language, "transcribing")
-              : recordState === "recording" || recordState === "paused"
-                ? `${mm}:${ss}${recordState === "paused" ? " · Paused" : ""}`
-                : t(language, "tapAndSpeak")}
-          </p>
-        </div>
+            {recordState === "processing" && (
+              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white/60">
+                <Loader2 className="h-10 w-10 animate-spin text-[#c96f35]" />
+              </div>
+            )}
 
-        {transcript && (
-          <p className="rounded-xl bg-white/50 p-5 text-xl leading-relaxed text-slate-800">
-            &ldquo;{transcript}&rdquo;
-          </p>
+            <p className="text-lg font-medium text-[#c96f35]">
+              {recordState === "processing"
+                ? t(language, "transcribing")
+                : recordState === "recording" || recordState === "paused"
+                  ? `${mm}:${ss}${recordState === "paused" ? " · Paused" : ""}`
+                  : t(language, "tapAndSpeak")}
+            </p>
+          </div>
+        )}
+
+        {recordState === "review" && (
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-slate-700">
+              {t(language, "tellUsInYourWords")}
+            </label>
+            <textarea
+              value={transcript}
+              onChange={(e) => setTranscript(e.target.value)}
+              rows={3}
+              placeholder="..."
+              className="genoroot-input min-h-[5.5rem] resize-y text-lg leading-relaxed focus:ring-2 focus:ring-[#e8894a]/50 focus:outline-none"
+            />
+          </div>
         )}
 
         {error && <p className="text-center text-base text-red-600">{error}</p>}
@@ -264,9 +276,8 @@ export function VoiceCapture({ language, onConfirm, onCancel }: VoiceCaptureProp
         <div className="flex gap-3">
           <button
             type="button"
-            className="genoroot-btn-continue flex-1 disabled:opacity-40"
-            disabled={!transcript}
-            onClick={() => onConfirm(transcript)}
+            className="genoroot-btn-continue flex-1"
+            onClick={() => onConfirm(transcript.trim())}
           >
             {t(language, "useThis")}
           </button>
@@ -274,6 +285,10 @@ export function VoiceCapture({ language, onConfirm, onCancel }: VoiceCaptureProp
             type="button"
             className="genoroot-btn-back flex-1"
             onClick={() => {
+              if (recordState === "review") {
+                resetRecording();
+                return;
+              }
               resetRecording();
               onCancel();
             }}

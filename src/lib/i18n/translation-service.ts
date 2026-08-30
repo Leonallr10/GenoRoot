@@ -140,6 +140,29 @@ export async function translateText(
   return restorePlaceholders(translated, tokens);
 }
 
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T, index: number) => Promise<R>
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      results[index] = await mapper(items[index], index);
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, () =>
+    worker()
+  );
+  await Promise.all(workers);
+  return results;
+}
+
 export async function translateBatch(
   texts: string[],
   sourceLang: string,
@@ -148,8 +171,7 @@ export async function translateBatch(
 ): Promise<string[]> {
   if (sourceLang === targetLang || !token) return texts;
 
-  const results = await Promise.all(
-    texts.map((text) => translateText(text, sourceLang, targetLang, token))
+  return mapWithConcurrency(texts, 4, (text) =>
+    translateText(text, sourceLang, targetLang, token)
   );
-  return results;
 }

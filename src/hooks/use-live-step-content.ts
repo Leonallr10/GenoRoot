@@ -105,14 +105,17 @@ export function useLiveStepContent(lang: string, step: FlowStep) {
 
   return {
     prompt: staticPrompt ?? livePrompt.text,
+    englishPrompt,
     promptLoading: !staticPrompt && livePrompt.loading,
     promptError: livePrompt.error,
     options,
+    englishOptions,
     optionsLoading,
     optionsError,
-    loading:
+    loading: false,
+    translating:
       (!staticPrompt && livePrompt.loading) ||
-      (!hasStaticTranslations(lang) && step.options && optionsLoading),
+      (!hasStaticTranslations(lang) && Boolean(step.options) && optionsLoading),
     error: livePrompt.error ?? optionsError,
   };
 }

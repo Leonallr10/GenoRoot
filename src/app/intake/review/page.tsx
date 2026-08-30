@@ -6,19 +6,12 @@ import {
   ArrowLeft,
   CheckCircle2,
   Languages,
-  Pause,
-  Play,
   RotateCcw,
   Send,
-  Square,
-  Volume2,
 } from "lucide-react";
 import { ReviewAnswerCard } from "@/components/intake/ReviewAnswerCard";
 import { useIntakeStore } from "@/hooks/use-intake-store";
-import { useTts } from "@/hooks/use-tts";
-import { formatStepAnswerForDisplay, getStepAnswer } from "@/lib/engine/answers";
-import { getStepPrompt } from "@/lib/engine/normalize";
-import { findStepIndexById, getVisibleSteps } from "@/lib/engine/question-flow";
+import { getVisibleSteps, findStepIndexById } from "@/lib/engine/question-flow";
 import { getSectionTitle, t } from "@/lib/i18n/translations";
 import { getLanguage } from "@/lib/i18n/languages";
 import { intakeSchema } from "@/lib/schema/questions";
@@ -31,35 +24,16 @@ export default function ReviewPage() {
   const markSubmitted = useIntakeStore((s) => s.markSubmitted);
   const resetIntake = useIntakeStore((s) => s.reset);
   const setCurrentStep = useIntakeStore((s) => s.setCurrentStep);
-  const { speak, stop, pause, resume, isSpeaking, isPaused } = useTts(lang);
 
   const visibleSteps = useMemo(() => getVisibleSteps(answers), [answers]);
 
-  const reviewText = useMemo(() => {
-    return visibleSteps
-      .map((step) => {
-        const val = getStepAnswer(answers, step);
-        const prompt = getStepPrompt(
-          lang,
-          step.questionKey,
-          step.rowKey,
-          step.followupKey,
-          step.columnKey
-        );
-        return `${prompt}: ${formatStepAnswerForDisplay(step, val, lang, t(lang, "yes"), t(lang, "no"))}`;
-      })
-      .join(". ");
-  }, [visibleSteps, answers, lang]);
-
   const handleReintake = () => {
-    stop();
     resetIntake();
     setCurrentStep(0);
     router.push("/intake/0");
   };
 
   const handleSubmit = () => {
-    stop();
     const state = {
       preferredLanguage: lang,
       answers,
@@ -130,47 +104,6 @@ export default function ReviewPage() {
         </div>
 
         <div className="shrink-0 space-y-3 pt-3">
-          {!isSpeaking ? (
-            <button
-              type="button"
-              className="genoroot-btn-listen flex w-full items-center justify-center gap-2 py-3"
-              onClick={() => speak(reviewText)}
-            >
-              <Volume2 className="h-5 w-5" />
-              {t(lang, "reviewAloud")}
-            </button>
-          ) : (
-            <div className="flex gap-3">
-              {isPaused ? (
-                <button
-                  type="button"
-                  className="genoroot-btn-back flex flex-1 items-center justify-center gap-2"
-                  onClick={resume}
-                >
-                  <Play className="h-5 w-5" />
-                  {t(lang, "resumeListening")}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="genoroot-btn-back flex flex-1 items-center justify-center gap-2"
-                  onClick={pause}
-                >
-                  <Pause className="h-5 w-5" />
-                  {t(lang, "pauseListening")}
-                </button>
-              )}
-              <button
-                type="button"
-                className="genoroot-btn-back flex flex-1 items-center justify-center gap-2"
-                onClick={stop}
-              >
-                <Square className="h-5 w-5 fill-current" />
-                {t(lang, "stopListening")}
-              </button>
-            </div>
-          )}
-
           <button
             type="button"
             className="genoroot-btn-back inline-flex w-full items-center justify-center gap-2"

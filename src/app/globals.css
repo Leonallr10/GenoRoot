@@ -80,20 +80,6 @@ body {
   box-shadow: 0 8px 28px rgb(217 105 56 / 0.35);
 }
 
-.genoroot-btn-listen {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  border-radius: 9999px;
-  border: 1.5px solid #e8894a;
-  background: rgb(255 255 255 / 0.55);
-  padding: 0.625rem 1.25rem;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #c96f35;
-  backdrop-filter: blur(8px);
-}
-
 .genoroot-btn-back {
   flex: 1;
   min-height: 3.75rem;

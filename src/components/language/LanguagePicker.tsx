@@ -16,10 +16,8 @@ import { getWhisperLanguage } from "@/lib/i18n/whisper-languages";
 import type { WhisperLanguage } from "@/lib/i18n/whisper-languages";
 import { t } from "@/lib/i18n/translations";
 import { useIntakeStore } from "@/hooks/use-intake-store";
-import {
-  getIntakeContinuePath,
-  getIntakeContinueStepIndex,
-} from "@/lib/engine/intake-navigation";
+import { getIntakeContinuePath, getIntakeContinueStepIndex } from "@/lib/engine/intake-navigation";
+import { prefetchIntakeTranslations } from "@/lib/i18n/prefetch-intake-translations";
 
 type LanguageOption = Language | WhisperLanguage;
 
@@ -121,6 +119,7 @@ export function LanguagePicker() {
   const handleContinue = () => {
     if (!selectedCode || !isIntakeLanguage(selectedCode)) return;
     setLanguage(selectedCode);
+    void prefetchIntakeTranslations(selectedCode);
     const stepIndex = getIntakeContinueStepIndex(answers);
     setCurrentStep(stepIndex);
     router.push(getIntakeContinuePath(answers));
