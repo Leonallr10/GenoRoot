@@ -12,6 +12,7 @@ import {
 import { ReviewAnswerCard } from "@/components/intake/ReviewAnswerCard";
 import { useIntakeStore } from "@/hooks/use-intake-store";
 import { getVisibleSteps, findStepIndexById } from "@/lib/engine/question-flow";
+import { setStepNavDirection } from "@/lib/engine/step-transition";
 import { getSectionTitle, t } from "@/lib/i18n/translations";
 import { getLanguage } from "@/lib/i18n/languages";
 import { intakeSchema } from "@/lib/schema/questions";
@@ -85,7 +86,10 @@ export default function ReviewPage() {
                         step={step}
                         lang={lang}
                         answers={answers}
-                        onEdit={() => router.push(`/intake/${stepIdx}`)}
+                        onEdit={() => {
+                          setStepNavDirection("back");
+                          router.push(`/intake/${stepIdx}?from=review`);
+                        }}
                       />
                     );
                   })}
