@@ -38,6 +38,31 @@ export function transcriptRowsToCsv(
   return lines.join("\n");
 }
 
+export function originalTranscriptRowsToCsv(
+  rows: { label: string; original: string }[]
+): string {
+  if (rows.length === 0) return "";
+  const lines = ["Field,Transcript"];
+  for (const row of rows) {
+    lines.push([escapeCsv(row.label), escapeCsv(row.original)].join(","));
+  }
+  return lines.join("\n");
+}
+
+export function reportSectionsToCsv(
+  title: string,
+  sections: { label: string; value: string | string[] }[]
+): string {
+  const lines = ["Section,Content", `${escapeCsv("Title")},${escapeCsv(title)}`];
+  for (const section of sections) {
+    const content = Array.isArray(section.value)
+      ? section.value.join("; ")
+      : section.value;
+    lines.push([escapeCsv(section.label), escapeCsv(content)].join(","));
+  }
+  return lines.join("\n");
+}
+
 export function combineCsvSections(...sections: string[]): string {
   return sections.filter(Boolean).join("\n\n");
 }

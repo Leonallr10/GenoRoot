@@ -21,6 +21,15 @@ export function downloadJsonFile(filename: string, data: unknown): void {
   downloadTextFile(filename, json, "application/json;charset=utf-8;");
 }
 
+export function downloadBlobFile(filename: string, blob: Blob): void {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
 export function buildOriginalIntakeJson(
   lang: string,
   answers: IntakeAnswers,

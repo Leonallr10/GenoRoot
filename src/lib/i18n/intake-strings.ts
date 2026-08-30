@@ -26,6 +26,20 @@ const INTAKE_UI_KEYS = [
   "submitIntake",
   "edit",
   "translatingContent",
+  "generateReport",
+  "generatingReport",
+  "clinicalReport",
+  "downloadCsv",
+  "downloadReport",
+  "downloadReportPdf",
+  "downloadPdf",
+  "downloadExcel",
+  "download",
+  "downloadInEnglish",
+  "downloadInLanguage",
+  "preparingDownload",
+  "regenerateReport",
+  "reportFailed",
 ] as const;
 
 /** All English strings needed during intake (questions, options, UI). */

@@ -53,6 +53,19 @@ export type TranslationDict = {
   viewOriginal: string;
   downloadCsv: string;
   downloadJson: string;
+  downloadExcel: string;
+  download: string;
+  downloadInEnglish: string;
+  downloadInLanguage: string;
+  preparingDownload: string;
+  generateReport: string;
+  generatingReport: string;
+  clinicalReport: string;
+  downloadReport: string;
+  downloadReportPdf: string;
+  downloadPdf: string;
+  regenerateReport: string;
+  reportFailed: string;
   viewStructuredData: string;
   comingSoon: string;
   comingSoonMessage: string;
@@ -128,8 +141,21 @@ export const en: TranslationDict = {
   recordedIn: "Your answers were recorded in {language}.",
   viewInEnglish: "View in English",
   viewOriginal: "View original answers",
-  downloadCsv: "Download CSV",
+  downloadCsv: "CSV",
   downloadJson: "Download JSON",
+  downloadExcel: "Excel",
+  download: "Download",
+  downloadInEnglish: "English",
+  downloadInLanguage: "{language}",
+  preparingDownload: "Preparing download…",
+  generateReport: "Generate clinical report",
+  generatingReport: "Generating your clinical report…",
+  clinicalReport: "Clinical report",
+  downloadReport: "Download report",
+  downloadReportPdf: "Download report PDF",
+  downloadPdf: "PDF",
+  regenerateReport: "Regenerate",
+  reportFailed: "Could not generate the report. Please try again.",
   viewStructuredData: "View structured data",
   comingSoon: "Coming soon",
   comingSoonMessage:
