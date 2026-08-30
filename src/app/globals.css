@@ -30,6 +30,22 @@ body {
   min-height: 100dvh;
 }
 
+.bg-genoroot-home {
+  background-color: #efcdb5;
+  background-image:
+    radial-gradient(
+      ellipse at 50% 0%,
+      rgb(253 248 244 / 0.92) 0%,
+      rgb(245 220 200 / 0.88) 42%,
+      rgb(239 205 181 / 0.84) 100%
+    ),
+    url("/bg.jpg");
+  background-size: cover, cover;
+  background-position: center top, center;
+  background-repeat: no-repeat, no-repeat;
+  min-height: 100dvh;
+}
+
 .safe-top {
   padding-top: max(0.75rem, env(safe-area-inset-top));
 }
