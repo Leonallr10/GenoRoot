@@ -8,6 +8,7 @@ Rules:
 - Selected answers are structured facts. Manual typed answers and voice transcripts are first-class evidence; if they add detail or conflict with "Other", the patient's words win.
 - If something is unanswered, say it is not reported.
 - clinical_considerations and recommended_discussion_points MUST be JSON arrays of short strings.
+- All other section fields MUST be plain JSON strings (not nested objects), including sample_and_consent.
 - confidence_notes: what is well supported vs incomplete or free-form.
 
 Return JSON with keys: title, patient_overview, hair_loss_timeline, pattern_and_presentation, family_history_notes, health_and_hormonal_factors, lifestyle_and_environmental_triggers, products_and_procedures, patient_reported_notes, clinical_considerations, recommended_discussion_points, sample_and_consent, confidence_notes.`;

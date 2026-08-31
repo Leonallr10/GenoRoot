@@ -36,19 +36,80 @@ function fail(
   };
 }
 
+const REPORT_STRING_FIELDS = [
+  "title",
+  "patient_overview",
+  "hair_loss_timeline",
+  "pattern_and_presentation",
+  "family_history_notes",
+  "health_and_hormonal_factors",
+  "lifestyle_and_environmental_triggers",
+  "products_and_procedures",
+  "patient_reported_notes",
+  "sample_and_consent",
+  "confidence_notes",
+] as const;
+
+const REPORT_ARRAY_FIELDS = [
+  "clinical_considerations",
+  "recommended_discussion_points",
+] as const;
+
+function coerceToString(value: unknown): string {
+  if (value == null) return "";
+  if (typeof value === "string") return value.trim();
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => coerceToString(item)).filter(Boolean).join("; ");
+  }
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    const parts = Object.entries(record)
+      .map(([key, entry]) => {
+        const text = coerceToString(entry);
+        return text ? `${key}: ${text}` : "";
+      })
+      .filter(Boolean);
+    if (parts.length > 0) return parts.join(". ");
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+
+function coerceToStringArray(value: unknown): string[] {
+  if (value == null) return [];
+  if (Array.isArray(value)) {
+    return value.map((item) => coerceToString(item)).filter(Boolean);
+  }
+  if (typeof value === "string") {
+    return value
+      .split(/\r?\n|;/)
+      .map((item) => item.replace(/^[-*]\s*/, "").trim())
+      .filter(Boolean);
+  }
+  const asString = coerceToString(value);
+  return asString ? [asString] : [];
+}
+
 function coerceReportJson(value: unknown): unknown {
   if (!value || typeof value !== "object" || Array.isArray(value)) return value;
 
   const report = { ...(value as Record<string, unknown>) };
-  for (const key of ["clinical_considerations", "recommended_discussion_points"]) {
-    const field = report[key];
-    if (typeof field === "string") {
-      report[key] = field
-        .split(/\r?\n|;/)
-        .map((item) => item.replace(/^[-*]\s*/, "").trim())
-        .filter(Boolean);
+
+  for (const key of REPORT_STRING_FIELDS) {
+    if (key in report && typeof report[key] !== "string") {
+      report[key] = coerceToString(report[key]);
     }
   }
+
+  for (const key of REPORT_ARRAY_FIELDS) {
+    if (key in report && !Array.isArray(report[key])) {
+      report[key] = coerceToStringArray(report[key]);
+    }
+  }
+
   return report;
 }
 
